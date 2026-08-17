@@ -1,0 +1,19 @@
+# Este arquivo cobre o CONECTOR (onboarding). A maquina de quem administra nao
+# precisa de tudo isto: o painel (admin.pyw) depende so de `cryptography`, e o
+# "Administrar Acessos.bat" instala apenas ela. Nao rode este requirements.txt
+# inteiro na maquina do admin — traria o Playwright sem necessidade.
+
+# notebooklm-py fornece o executavel `notebooklm`, que o connect.py invoca por
+# subprocesso para abrir o login no Chromium. Nao aparece como `import` no
+# codigo — e por isso ficou de fora daqui ate 16/08/2026, e o onboarding so
+# funcionava em maquina que ja tivesse as dependencias do servidor instaladas.
+# Mesma versao pinada do servidor: o formato do storage_state precisa bater.
+notebooklm-py==0.6.0
+
+# Chromium do login. O `playwright install chromium` do setup.py depende dele.
+playwright>=1.50.0
+
+# Cofre local do painel de administracao (client/cofre.py): scrypt para derivar
+# a chave da senha, Fernet para cifrar o token. Nao ha cifra simetrica na
+# biblioteca padrao, e inventar uma para guardar credencial seria pior.
+cryptography>=42.0.8,<47.0

@@ -1,0 +1,29 @@
+# Contexto de build = server/. Nada aqui pode entrar nas camadas da imagem.
+
+# Segredos e credenciais — JAMAIS na imagem (chave Fernet, connector key, DATABASE_URL)
+.env
+.env.*
+*.env
+server.log
+*.log
+
+# Tokens / cookies de sessão Google
+**/storage_state.json
+**/browser_profile/
+.notebooklm/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+
+# VCS / editor
+.git/
+.gitignore
+.vscode/
+.idea/

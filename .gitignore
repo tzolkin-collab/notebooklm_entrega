@@ -1,0 +1,37 @@
+# Segredos — NUNCA commitar
+.env
+server.log
+__pycache__/
+*.pyc
+*.pyo
+
+# Tokens e cookies — NUNCA subir
+**/storage_state.json
+**/browser_profile/
+
+# Playwright
+playwright-report/
+
+# Python
+*.egg-info/
+dist/
+build/
+# O sufixo pega variantes como .venv-testes/, criado para rodar a suite numa
+# maquina que so tinha o Python do sistema. Sem o curinga, um `git add -A`
+# versionaria milhares de arquivos do ambiente.
+.venv*/
+venv/
+
+# Executaveis gerados pelo client/build_exe.py — reconstruir, nao versionar:
+# 10 MB por build, e o binario nao e revisavel em diff.
+client/dist/
+client/build/
+client/*.exe
+
+# Cofre do painel de administracao. Contem a chave de admin cifrada com a senha
+# do dono. Nasce ao lado do .exe quando se escolhe o modo portatil — e o .exe
+# pode estar dentro do repositorio, como aconteceu no primeiro teste real.
+#
+# Cifrado nao e motivo para versionar: e credencial, e um repo entregue a
+# terceiros carregaria a chave de administrador de quem o criou.
+*.cofre

@@ -1,0 +1,39 @@
+# Segredos — o Dockerfile faz `COPY . .`; sem esta lista o .env do
+# desenvolvedor (chave Fernet, senha do Postgres, client_secret do OAuth)
+# entra numa layer da imagem e viaja para onde a imagem for publicada.
+.env
+**/.env
+*.env
+!**/.env.example
+
+# Historico do git — contem commits que removeram API keys; os objetos
+# packed continuam recuperaveis de dentro da imagem.
+.git
+.gitignore
+.github
+
+# Tokens e cookies de sessao Google
+**/storage_state.json
+**/browser_profile/
+
+# Nao fazem parte do runtime do servidor
+client/
+scripts/
+docs/
+server/tests/
+*.md
+setup.bat
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Build
+dist/
+build/
+playwright-report/

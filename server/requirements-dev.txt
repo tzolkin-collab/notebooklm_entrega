@@ -1,0 +1,11 @@
+# Dependencias de teste. NAO entram na imagem — o .dockerignore exclui
+# server/tests/ e o Dockerfile instala apenas requirements.txt.
+#
+#   pip install -r server/requirements.txt -r server/requirements-dev.txt
+#   pytest
+
+-r requirements.txt
+
+pytest>=8.0,<10.0
+pytest-asyncio>=0.24,<2.0
+pytest-cov>=5.0,<8.0

@@ -1,0 +1,78 @@
+{
+  "name": "aaa-notebooklm-skill",
+  "version": "2.1.0",
+  "description": "Conector e skill do NotebookLM — consulta com citações via conector MCP (OAuth) ou API REST, gestão de tokens Google e controle de acesso por nível.",
+  "skill": "SKILL.md",
+  "project": {
+    "name": "NotebookLM Connector"
+  },
+  "_server_note": "As tres URLs abaixo sao PLACEHOLDERS. Substitua <PUBLIC_URL> pelo host do servidor do escritorio ANTES de reempacotar o .skill — este arquivo nao le variavel de ambiente. Deve bater com o PUBLIC_URL do servidor e com o redirect_uri registrado no Google Cloud Console.",
+  "server": {
+    "url": "<PUBLIC_URL>",
+    "mcp_connector": "<PUBLIC_URL>/mcp",
+    "rest_base": "<PUBLIC_URL>/api",
+    "rest_auth": "Authorization: Bearer <token-do-usuário>",
+    "bootstrap_key_header": "X-Onboarding-Token (uso único, por-usuário; apenas /token/upload)",
+    "health_endpoint": "/health"
+  },
+  "mcp_tools": [
+    "quem_sou_eu",
+    "listar_notebooks",
+    "perguntar",
+    "listar_fontes",
+    "verificar_token",
+    "criar_notebook",
+    "adicionar_fonte"
+  ],
+  "client": {
+    "root": "%USERPROFILE%\\Documents\\notebook-connector\\client",
+    "scripts": {
+      "connect": "connect.py",
+      "setup": "setup.py"
+    },
+    "token_storage": "%USERPROFILE%\\.notebooklm\\profiles\\",
+    "env": {
+      "NOTEBOOKLM_SERVER_URL": "obrigatoria — sem default; connect.py recusa rodar sem ela"
+    }
+  },
+  "admin_tools": {
+    "note": "Break-glass — exigem a chave Fernet + DATABASE_URL. NUNCA em máquina de usuário.",
+    "location": "server/db/",
+    "scripts": [
+      "login.py",
+      "register.py",
+      "check.py",
+      "gen_token.py",
+      "apply_schema.py"
+    ]
+  },
+  "env": {
+    "client": [
+      "NOTEBOOKLM_ONBOARDING_TOKEN"
+    ],
+    "server": [
+      "NOTEBOOKLM_ENCRYPTION_KEY",
+      "DATABASE_URL",
+      "PUBLIC_URL",
+      "GOOGLE_OAUTH_CLIENT_ID",
+      "GOOGLE_OAUTH_CLIENT_SECRET",
+      "FORWARDED_ALLOW_IPS",
+      "NOTEBOOKLM_ALLOWED_DOMAINS",
+      "NOTEBOOKLM_AUDIT_FAIL_CLOSED",
+      "NOTEBOOKLM_MCP_RATE_PER_MIN",
+      "HOST",
+      "PORT"
+    ]
+  },
+  "triggers": [
+    "notebooklm",
+    "notebook",
+    "consulta juridica",
+    "token expirado",
+    "auth check",
+    "verificar token",
+    "login google",
+    "registrar usuario",
+    "connector"
+  ]
+}
