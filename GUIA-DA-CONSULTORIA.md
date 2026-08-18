@@ -47,8 +47,16 @@ Sem otimismo. Cada linha abaixo é verificável no repositório.
 | Teto de requisições | conta por IP **antes** da autenticação; 4 testes cobrem, incluindo chamada sem credencial |
 
 **"Verificado por mutação"** quer dizer: desligamos a proteção no código de
-produção e confirmamos que a suíte detecta. Desativar o fail-closed quebra 6
-testes; desativar a checagem de `email_verified` quebra 1.
+produção e confirmamos que a suíte detecta. Medido sobre as 44:
+
+| Proteção desligada | Testes que quebram |
+|---|---|
+| Fail-closed do acesso a notebook por ID | 6 |
+| Validação da chave Fernet | 9 |
+| Fail-closed da listagem | 1 |
+| Recusa de e-mail Google não verificado | 1 |
+
+Nenhuma delas passa despercebida — que é o ponto.
 
 Isso importa mais do que parece: **uma suíte pytest pode ficar verde sem ter
 executado o que interessa.** Três formas de acontecer, todas silenciosas:

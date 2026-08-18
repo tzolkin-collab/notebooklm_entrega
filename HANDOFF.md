@@ -140,9 +140,17 @@ registry, rode o check do `DEPLOY.md` seção 4.
 | Comportamento HTTP | recusas e limites observados em deploy real — `docs/VERIFICACAO.md` |
 | Imutabilidade do log | 10/10 contra banco real: `UPDATE`, `DELETE` e `TRUNCATE` recusados |
 
-"Verificado por mutação" quer dizer: desligamos a proteção no código de produção
-e confirmamos que a suíte detecta. Desativar o fail-closed quebra 6 testes;
-desativar a checagem de `email_verified` quebra 1.
+"Verificado por mutação" quer dizer: desligamos a proteção no código de
+produção e confirmamos que a suíte detecta. Medido sobre as 44:
+
+| Proteção desligada | Testes que quebram |
+|---|---|
+| Fail-closed do acesso a notebook por ID | 6 |
+| Validação da chave Fernet | 9 |
+| Fail-closed da listagem | 1 |
+| Recusa de e-mail Google não verificado | 1 |
+
+Nenhuma delas passa despercebida — que é o ponto.
 
 Verde sozinho não prova nada. Uma suíte pytest passa sem ter executado o que
 interessa em pelo menos três situações — teste async ignorado por falta de
