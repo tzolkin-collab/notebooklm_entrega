@@ -54,7 +54,7 @@ pip install -r server/requirements-dev.txt   # já puxa o requirements.txt
 pytest
 ```
 
-33 testes, ~2s. Cobrem autenticação dual (OAuth + Bearer) e o controle de acesso
+44 testes, ~2s. Cobrem autenticação dual (OAuth + Bearer) e o controle de acesso
 por área. O `pytest.ini` cuida de `pythonpath` e `asyncio_mode` — não passe flags.
 
 Não é preciso banco nem rede: um fixture bloqueia conexão real com o Postgres e

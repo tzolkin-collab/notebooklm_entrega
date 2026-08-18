@@ -42,7 +42,7 @@ O que precisa ser provisionado antes do primeiro deploy:
 | Item | Como obter |
 |---|---|
 | Chave Fernet | `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` |
-| Postgres | instância nova; schema via `python server/db/apply_schema.py` |
+| Postgres | verificar se há instância aproveitável no ambiente do escritório — ver `DEPLOY.md`, seção 0; schema via `python server/db/apply_schema.py` |
 | Cliente OAuth Google | criar no Google Cloud da organização, com `redirect_uri = https://<host>/auth/callback` |
 | `PUBLIC_URL` | a URL pública do deploy — **obrigatória, sem default** |
 
@@ -130,7 +130,7 @@ registry, rode o check do `DEPLOY.md` seção 4.
 
 | Item | Estado |
 |---|---|
-| Testes | 33 passando, ~2s, verificados por mutação |
+| Testes | 44 passando, ~2s, verificados por mutação |
 | Container | usuário sem privilégio (uid 1000) |
 | `HEALTHCHECK` | `urllib` contra `/health`, testado nos dois sentidos |
 | `.dockerignore` | `.env`, `.git`, `client/`, `scripts/` fora da imagem |

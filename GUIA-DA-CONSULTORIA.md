@@ -38,7 +38,7 @@ Sem otimismo. Cada linha abaixo é verificável no repositório.
 
 | Item | Como foi verificado |
 |---|---|
-| 33 testes, ~2s | verificados **por mutação** — ver abaixo |
+| 44 testes, ~2s | verificados **por mutação** — ver abaixo |
 | Imutabilidade do log | 10/10 contra banco real: `UPDATE`, `DELETE` e `TRUNCATE` recusados por trigger |
 | Container sem privilégio | `appuser` uid 1000, `USER appuser` no `Dockerfile` |
 | `HEALTHCHECK` | `urllib` contra `/health`, testado nos dois sentidos |
@@ -140,7 +140,7 @@ enviado *pelo cliente*.
    pip install -r server/requirements.txt -r server/requirements-dev.txt
    pytest
    ```
-   Esperado: 33 passando em ~2s. Não passe flags — o `pytest.ini` já cuida de
+   Esperado: 44 passando em ~2s. Não passe flags — o `pytest.ini` já cuida de
    `pythonpath` e `asyncio_mode`.
 
 2. **Buildar a imagem e rodar o check de vazamento** (acima). Nunca foi feito.

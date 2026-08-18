@@ -5,7 +5,7 @@
 > no repositório porque o push foi recusado — o token usado não tinha o escopo
 > `workflow`. Instalar é o passo 1 abaixo.
 
-O que existe hoje: a suíte de testes roda localmente (`pytest`, 26 testes,
+O que existe hoje: a suíte de testes roda localmente (`pytest`, 44 testes,
 ~2s). O que falta: rodar sozinha a cada push.
 
 ---
@@ -89,7 +89,7 @@ jobs:
 
 | Job | Cobre | Bloqueia merge |
 |---|---|---|
-| `test` | os 26 testes de auth e access control | sim |
+| `test` | os 44 testes de auth, access control e configuracao | sim |
 | `imagem` | build + `.env`/`.git` fora da imagem + non-root | sim |
 | `dependencias` | CVEs conhecidas no requirements | não |
 
