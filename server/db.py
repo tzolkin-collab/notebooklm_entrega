@@ -272,6 +272,36 @@ def issue_api_token(email: str) -> str | None:
     return token
 
 
+def bootstrap_admin(email: str, nome: str) -> str | None:
+    """
+    Cria (ou promove) o email dado a admin ativo, SOMENTE se ainda nao existir
+    nenhum admin ativo no banco. Existe para o bootstrap do PRIMEIRO admin sem
+    exigir acesso direto ao Postgres (ver POST /admin/bootstrap) — depois que
+    o primeiro admin existe, este caminho sempre recusa e o normal passa a ser
+    POST /admin/users (com um admin ja autenticado).
+
+    Retorna o api_token em claro (emitido nesta mesma chamada) se criou/promoveu,
+    ou None se ja existe algum admin ativo.
+    """
+    token = "nlm_" + secrets.token_urlsafe(32)
+    with _conn() as conn:
+        ja_existe = conn.execute(
+            "SELECT 1 FROM notebooklm.users WHERE nivel = 'admin' AND ativo = true LIMIT 1"
+        ).fetchone()
+        if ja_existe:
+            return None
+        conn.execute(
+            """INSERT INTO notebooklm.users (email, nome, nivel, ativo, api_token)
+               VALUES (%s, %s, 'admin', true, %s)
+               ON CONFLICT (email) DO UPDATE SET
+                   nome = EXCLUDED.nome, nivel = 'admin', ativo = true,
+                   api_token = EXCLUDED.api_token""",
+            (email, nome, _hash_token(token)),
+        )
+        conn.commit()
+    return token
+
+
 def get_user(email: str) -> dict | None:
     """Retorna dados do usuario ou None se nao existir."""
     with _conn() as conn:

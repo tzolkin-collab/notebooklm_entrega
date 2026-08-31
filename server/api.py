@@ -286,6 +286,55 @@ async def classificar_notebooks(request: Request, body: ClassificarRequest,
     return {"status": "ok", "gravados": gravados, "recebidos": len(body.notebooks)}
 
 
+class BootstrapAdminRequest(BaseModel):
+    email: str
+    nome: str = ""
+
+
+@app.post("/admin/bootstrap")
+@limiter.limit("5/minute")
+async def admin_bootstrap(request: Request, body: BootstrapAdminRequest,
+                          x_bootstrap_key: str | None = Header(None, alias="X-Bootstrap-Key")):
+    """
+    Cria o PRIMEIRO admin do sistema, sem exigir acesso direto ao Postgres.
+
+    Funciona apenas enquanto nao existir nenhum admin ativo — depois disso,
+    sempre recusa (409): o caminho normal passa a ser POST /admin/users, com um
+    admin ja autenticado. Protegido por uma chave separada do api_token
+    (NOTEBOOKLM_BOOTSTRAP_KEY) que so precisa existir no ambiente ate o primeiro
+    uso; recomendado remove-la do .env depois.
+    """
+    esperada = os.getenv("NOTEBOOKLM_BOOTSTRAP_KEY", "").strip()
+    if not esperada:
+        raise HTTPException(status_code=503, detail="Bootstrap de admin desabilitado")
+    if not x_bootstrap_key or not secrets.compare_digest(x_bootstrap_key.encode(), esperada.encode()):
+        raise HTTPException(status_code=401, detail="Credencial de bootstrap invalida")
+
+    email = body.email.strip().lower()
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="Email invalido")
+
+    token = db.bootstrap_admin(email, body.nome.strip())
+    if not token:
+        db.log_access("bootstrap_admin", email, resultado="negado", detalhe="ja existe admin ativo")
+        raise HTTPException(status_code=409, detail="Ja existe um admin ativo; use POST /admin/users")
+
+    logger.info("bootstrap: primeiro admin criado (%s)", email)
+    db.log_access("bootstrap_admin", email, resultado="ok")
+    return {
+        "status": "ok",
+        "email": email,
+        "nivel": "admin",
+        "api_token": token,
+        "aviso": (
+            "Guarde o api_token com cuidado: e o segredo de admin na API REST "
+            "(envie como 'Authorization: Bearer <token>'). Nao sera exibido de novo. "
+            "Remova NOTEBOOKLM_BOOTSTRAP_KEY do ambiente agora — este endpoint so "
+            "aceita nova chamada se nao houver admin ativo."
+        ),
+    }
+
+
 class ActivateUserRequest(BaseModel):
     email: str
     nivel: str
