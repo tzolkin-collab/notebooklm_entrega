@@ -16,7 +16,6 @@ A correção óbvia não funciona, e isso também está coberto aqui: o
 ou seja, ele pula justamente as rotas decoradas. Adicioná-lo não muda nada.
 """
 import importlib
-import os
 
 import pytest
 from fastapi.testclient import TestClient

@@ -5,8 +5,7 @@ import hashlib
 import json
 import logging
 import secrets
-from datetime import datetime, timezone
-from urllib.parse import urlparse, unquote
+from urllib.parse import urlparse
 
 import psycopg
 from cryptography.fernet import Fernet

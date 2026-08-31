@@ -7,8 +7,7 @@ Valida:
 - Allowlist: email_verified, domínios permitidos
 - Error cases: token malformado, usuário inválido, etc
 """
-import pytest
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
+from unittest.mock import Mock, patch
 from mcp.server.auth.provider import AccessToken
 import sys
 import os
@@ -39,7 +38,7 @@ class TestDualAuth:
         mock_get_user.return_value = MockUser("user@example.com")
 
         # Import after mocking
-        from mcp_server import auth_provider, _dual_verify_token
+        from mcp_server import _dual_verify_token
 
         # Test
         result = await _dual_verify_token("valid_bearer_token_123")
@@ -122,28 +121,6 @@ class TestCurrentEmail:
         result = _current_email()
 
         assert result is None
-
-    @patch('mcp_server.get_access_token')
-    @patch.dict(os.environ, {"ALLOWED_EMAIL_DOMAINS": "example.com,authorized.org"})
-    def test_current_email_domain_allowlist(self, mock_get_access_token):
-        """Email de domínio permitido deve passar."""
-        # Reload config para pegar ALLOWED_EMAIL_DOMAINS
-        import config as cfg
-        # Este teste depende de como config.py inicializa ALLOWED_EMAIL_DOMAINS
-
-        mock_token = Mock()
-        mock_token.claims = {
-            "email": "user@example.com",
-            "email_verified": True
-        }
-        mock_get_access_token.return_value = mock_token
-
-        from mcp_server import _current_email
-
-        result = _current_email()
-
-        # Depende da config - este é mais um teste de integração
-        # Em produção, ALLOWED_EMAIL_DOMAINS é lido na startup
 
     @patch('mcp_server.get_access_token')
     def test_current_email_no_token(self, mock_get_access_token):

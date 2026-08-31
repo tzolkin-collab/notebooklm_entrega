@@ -27,8 +27,8 @@ logger = logging.getLogger(__name__)
 #
 # O @limiter.limit() do slowapi decora a funcao da rota, mas o FastAPI resolve as
 # dependencias antes de chama-la: nos endpoints com Depends(auth), o 401 acontece
-# antes de o contador existir. Verificado contra o deploy real — 13 requisicoes
-# sem credencial em /api/auth/check, nenhum 429.
+# antes de o contador existir — chamadas sem credencial nunca chegam a ser
+# contadas por ele.
 #
 # O SlowAPIMiddleware NAO resolve isso, apesar de parecer a correcao obvia. O
 # _should_exempt dele tem:
@@ -37,8 +37,7 @@ logger = logging.getLogger(__name__)
 #     if name in limiter._route_limits: return True
 #
 # Ou seja: ele pula de proposito justamente as rotas decoradas, que sao as
-# quebradas. Testado antes de entender o porque — o middleware rodava e nao
-# limitava nada.
+# quebradas.
 #
 # Dai este middleware proprio: janela deslizante por IP, avaliada antes de
 # qualquer rota. Os limites por rota do slowapi continuam valendo para quem
@@ -89,7 +88,6 @@ limiter = Limiter(key_func=get_remote_address)
 # openapi_url=None junto com docs_url/redoc_url: desligar so a UI deixa o schema
 # em /openapi.json, publico e sem autenticacao — o mapa completo da API (rotas,
 # parametros, esquema de auth) para quem nao passou por autenticacao nenhuma.
-# Verificado num deploy real: /docs dava 404, /openapi.json dava 200.
 app = FastAPI(title="NotebookLM Connector", docs_url=None, redoc_url=None, openapi_url=None)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)

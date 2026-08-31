@@ -17,9 +17,6 @@ Uso:
 import argparse
 import json
 import os
-import sys
-import tempfile
-import pathlib
 from urllib.parse import urlparse
 
 from cryptography.fernet import Fernet
@@ -65,7 +62,7 @@ def test_token(storage_state: dict) -> bool:
         context = browser.new_context(storage_state=storage_state)
         page = context.new_page()
         try:
-            response = page.goto("https://notebook.google.com", wait_until="networkidle", timeout=20000)
+            page.goto("https://notebook.google.com", wait_until="networkidle", timeout=20000)
             # Se redirecionar para accounts.google.com, o token expirou
             is_valid = "accounts.google.com" not in page.url
             return is_valid
