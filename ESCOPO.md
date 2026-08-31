@@ -96,21 +96,3 @@ escopo** v1.0.
 
 2. Decidir máquina-host dos perfis/cron (recomendado: máquina da organização).
 3. Conta Google definitiva do Doutor conectada como admin.
-
-
-## Encerramento desta entrega
-
-Esta entrega fecha no que está marcado **✅ entregue** acima: F1, F2 e a tool 11
-de F4 (com o adicional do vínculo por bot). **F3 inteira e a tool 12 de F4
-(`historico`) não foram construídas** — o contrato não avançou até essas fases,
-não é pendência técnica esquecida.
-
-F3 era, pelo próprio texto deste documento, "a entrega de maior valor
-percebido pelo cliente" — registrar isso aqui é para que quem ler depois saiba
-que a ausência foi decisão de escopo/contrato, não descuido.
-
-A partir deste ponto, retomar F3, a tool 12, ou qualquer item da seção "Fora
-do escopo" é trabalho novo, fora do que foi contratado e entregue até aqui —
-vale o que já dizia o topo deste documento: mudança de escopo é novo contrato,
-não uma continuação implícita do atual. Detalhes técnicos de handoff (o que
-falta provisionar, riscos conhecidos) estão em `HANDOFF.md`.

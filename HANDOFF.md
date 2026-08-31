@@ -3,12 +3,6 @@
 Documento de transferência. Escrito para quem vai assumir o projeto sem ter
 participado da construção.
 
-> **Estado da entrega:** fecha em F1, F2 e a tool 11 de F4 do `ESCOPO.md`
-> (mais o vínculo por bot, adicional fora do escopo original). F3 inteira e a
-> tool 12 de F4 não foram construídas porque o contrato não avançou até essas
-> fases — não é pendência técnica esquecida. Ver "Encerramento desta entrega"
-> no fim do `ESCOPO.md` para o detalhe.
-
 ## O que este repositório é
 
 Um servidor que expõe o acervo do NotebookLM da organização (~277 notebooks) como
