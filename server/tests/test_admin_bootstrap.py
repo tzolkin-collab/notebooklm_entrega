@@ -37,7 +37,7 @@ def test_bootstrap_rejects_invalid_email(client):
     assert response.status_code == 400
 
 
-def test_bootstrap_creates_first_admin(client, monkeypatch):
+def test_bootstrap_creates_admin(client, monkeypatch):
     create = MagicMock(return_value="nlm_plaintext-token")
     monkeypatch.setattr(db, "bootstrap_admin", create)
     response = client.post(
@@ -54,19 +54,23 @@ def test_bootstrap_creates_first_admin(client, monkeypatch):
     create.assert_called_once_with("doutor@example.com", "Doutor")
 
 
-def test_bootstrap_refuses_if_admin_already_exists(client, monkeypatch):
-    monkeypatch.setattr(db, "bootstrap_admin", MagicMock(return_value=None))
+def test_bootstrap_is_idempotent_for_multiple_emails(client, monkeypatch):
+    create = MagicMock(return_value="nlm_plaintext-token")
+    monkeypatch.setattr(db, "bootstrap_admin", create)
     log = MagicMock()
     monkeypatch.setattr(db, "log_access", log)
-    response = client.post(
-        "/admin/bootstrap",
-        json={"email": "a@example.com"},
-        headers={"X-Bootstrap-Key": "test-bootstrap-secret"},
-    )
-    assert response.status_code == 409
-    log.assert_called_once()
-    assert log.call_args.args[0] == "bootstrap_admin"
-    assert log.call_args.kwargs["resultado"] == "negado"
+
+    r1 = client.post("/admin/bootstrap", json={"email": "a@example.com"},
+                      headers={"X-Bootstrap-Key": "test-bootstrap-secret"})
+    r2 = client.post("/admin/bootstrap", json={"email": "b@example.com"},
+                      headers={"X-Bootstrap-Key": "test-bootstrap-secret"})
+    assert r1.status_code == 200
+    assert r2.status_code == 200
+    assert create.call_count == 2
+    assert log.call_count == 2
+    for call in log.call_args_list:
+        assert call.args[0] == "bootstrap_admin"
+        assert call.kwargs["resultado"] == "ok"
 
 
 def mock_connection(monkeypatch):
@@ -76,21 +80,13 @@ def mock_connection(monkeypatch):
     return conn
 
 
-def test_db_bootstrap_admin_refuses_when_admin_exists(monkeypatch):
+def test_db_bootstrap_admin_upserts_and_returns_token(monkeypatch):
     conn = mock_connection(monkeypatch)
-    conn.execute.return_value.fetchone.return_value = (1,)
-    assert db.bootstrap_admin("novo@example.com", "Novo") is None
-    assert conn.execute.call_count == 1
-    conn.commit.assert_not_called()
-
-
-def test_db_bootstrap_admin_creates_when_no_admin_exists(monkeypatch):
-    conn = mock_connection(monkeypatch)
-    conn.execute.return_value.fetchone.return_value = None
     token = db.bootstrap_admin("novo@example.com", "Novo")
     assert token.startswith("nlm_")
-    assert conn.execute.call_count == 2
-    insert_query, insert_params = conn.execute.call_args_list[1].args
-    assert "ON CONFLICT (email) DO UPDATE" in insert_query
-    assert insert_params == ("novo@example.com", "Novo", db._hash_token(token))
+    assert conn.execute.call_count == 1
+    query, params = conn.execute.call_args.args
+    assert "ON CONFLICT (email) DO UPDATE" in query
+    assert "nivel = 'admin'" in query
+    assert params == ("novo@example.com", "Novo", db._hash_token(token))
     conn.commit.assert_called_once()

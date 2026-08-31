@@ -272,24 +272,19 @@ def issue_api_token(email: str) -> str | None:
     return token
 
 
-def bootstrap_admin(email: str, nome: str) -> str | None:
+def bootstrap_admin(email: str, nome: str) -> str:
     """
-    Cria (ou promove) o email dado a admin ativo, SOMENTE se ainda nao existir
-    nenhum admin ativo no banco. Existe para o bootstrap do PRIMEIRO admin sem
-    exigir acesso direto ao Postgres (ver POST /admin/bootstrap) — depois que
-    o primeiro admin existe, este caminho sempre recusa e o normal passa a ser
-    POST /admin/users (com um admin ja autenticado).
+    Cria (ou promove) o email dado a admin ativo e emite um api_token novo.
 
-    Retorna o api_token em claro (emitido nesta mesma chamada) se criou/promoveu,
-    ou None se ja existe algum admin ativo.
+    Autorizado no nivel do endpoint (POST /admin/bootstrap) pela posse de
+    NOTEBOOKLM_BOOTSTRAP_KEY — um segredo de ambiente do servidor, nao uma
+    identidade de usuario. Nao e "auto-promocao": quem tem essa chave ja tem o
+    mesmo nivel de confianca de quem teria DATABASE_URL direto (poderia rodar
+    este mesmo UPDATE via psql). Idempotente e sem limite de uso — nao so o
+    primeiro admin, qualquer email autorizado por quem detem a chave.
     """
     token = "nlm_" + secrets.token_urlsafe(32)
     with _conn() as conn:
-        ja_existe = conn.execute(
-            "SELECT 1 FROM notebooklm.users WHERE nivel = 'admin' AND ativo = true LIMIT 1"
-        ).fetchone()
-        if ja_existe:
-            return None
         conn.execute(
             """INSERT INTO notebooklm.users (email, nome, nivel, ativo, api_token)
                VALUES (%s, %s, 'admin', true, %s)

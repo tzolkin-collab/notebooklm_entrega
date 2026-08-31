@@ -296,13 +296,15 @@ class BootstrapAdminRequest(BaseModel):
 async def admin_bootstrap(request: Request, body: BootstrapAdminRequest,
                           x_bootstrap_key: str | None = Header(None, alias="X-Bootstrap-Key")):
     """
-    Cria o PRIMEIRO admin do sistema, sem exigir acesso direto ao Postgres.
+    Cria ou promove um admin usando a chave de operador do servidor, sem
+    exigir acesso direto ao Postgres.
 
-    Funciona apenas enquanto nao existir nenhum admin ativo — depois disso,
-    sempre recusa (409): o caminho normal passa a ser POST /admin/users, com um
-    admin ja autenticado. Protegido por uma chave separada do api_token
-    (NOTEBOOKLM_BOOTSTRAP_KEY) que so precisa existir no ambiente ate o primeiro
-    uso; recomendado remove-la do .env depois.
+    Protegido por uma chave separada do api_token (NOTEBOOKLM_BOOTSTRAP_KEY):
+    quem a possui ja tem o mesmo nivel de confianca de quem teria DATABASE_URL
+    direto (poderia fazer o mesmo UPDATE via psql), entao isto nao e
+    auto-promocao por um usuario comum — e a mesma autoridade de operador,
+    so que alcancavel por HTTPS. Idempotente: pode ser chamado mais de uma
+    vez, para mais de um email.
     """
     esperada = os.getenv("NOTEBOOKLM_BOOTSTRAP_KEY", "").strip()
     if not esperada:
@@ -315,11 +317,7 @@ async def admin_bootstrap(request: Request, body: BootstrapAdminRequest,
         raise HTTPException(status_code=400, detail="Email invalido")
 
     token = db.bootstrap_admin(email, body.nome.strip())
-    if not token:
-        db.log_access("bootstrap_admin", email, resultado="negado", detalhe="ja existe admin ativo")
-        raise HTTPException(status_code=409, detail="Ja existe um admin ativo; use POST /admin/users")
-
-    logger.info("bootstrap: primeiro admin criado (%s)", email)
+    logger.info("bootstrap: admin criado/promovido (%s)", email)
     db.log_access("bootstrap_admin", email, resultado="ok")
     return {
         "status": "ok",
