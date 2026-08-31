@@ -33,24 +33,34 @@ por função e auditoria completa.
 
 ## Tools do produto final (12 MCP)
 
-| # | Tool | Nível | Fase |
-|---|---|---|---|
-| 1 | `quem_sou_eu` | logado | ✅ entregue |
-| 2 | `verificar_token` | logado | ✅ entregue |
-| 3 | `listar_notebooks` | cadastrado (filtro por área) | ✅ entregue |
-| 4 | `perguntar` | cadastrado (filtro por área) | ✅ entregue |
-| 5 | `listar_fontes` | cadastrado (filtro por área) | ✅ entregue |
-| 6 | `criar_notebook` | admin | F2 |
-| 7 | `adicionar_fonte` (URL e Drive) | gestor | F2 |
-| 8 | `gerar_relatorio` | juridico/financeiro (área) | F3 |
-| 9 | `gerar_podcast` | juridico/financeiro (área) | F3 |
-| 10 | `baixar_artefato` | mesmo nível do gerar | F3 |
-| 11 | `compartilhar_notebook` (por área) | admin | F4 |
-| 12 | `historico` (auditoria de conversas) | gestor | F4 |
+| # | Tool | Nível | Fase | Estado |
+|---|---|---|---|---|
+| 1 | `quem_sou_eu` | logado | F1 | ✅ entregue |
+| 2 | `verificar_token` | logado | F1 | ✅ entregue |
+| 3 | `listar_notebooks` | cadastrado (filtro por área) | F1 | ✅ entregue |
+| 4 | `perguntar` | cadastrado (filtro por área) | F1 | ✅ entregue |
+| 5 | `listar_fontes` | cadastrado (filtro por área) | F1 | ✅ entregue |
+| 6 | `criar_notebook` | admin | F2 | ✅ entregue |
+| 7 | `adicionar_fonte` (URL e Drive) | gestor | F2 | ✅ entregue |
+| 8 | `gerar_relatorio` | juridico/financeiro (área) | F3 | ❌ não entregue |
+| 9 | `gerar_podcast` | juridico/financeiro (área) | F3 | ❌ não entregue |
+| 10 | `baixar_artefato` | mesmo nível do gerar | F3 | ❌ não entregue |
+| 11 | `compartilhar_notebook` (por área) | admin | F4 | ✅ entregue (mais amplo — ver nota) |
+| 12 | `historico` (auditoria de conversas) | gestor | F4 | ❌ não entregue |
 
 REST espelha 6–12 para o n8n. Nada além dessas 12 — comandos restantes da
 lib (notas, quiz, flashcards, vídeos, research, persona) ficam **fora do
 escopo** v1.0.
+
+> **Nota sobre a tool 11:** o entregue vai além do previsto — junto de
+> `compartilhar_notebook`, foram construídas `status_compartilhamento` e
+> `sincronizar_compartilhamentos`, não listadas aqui originalmente.
+>
+> **Adição fora do escopo v1.0:** a tool `criar_vinculo_bot` (mais as rotas REST
+> `/token/link` e `/bot/token`) foi construída depois deste documento, para
+> permitir que um bot de chat externo entregue a sessão Google de alguém já
+> cadastrado sem passar pelo onboarding manual. Documentada em
+> `docs/BOT-TOKEN.md` e no `README.md`, item 4.
 
 ## Fases de entrega
 
@@ -86,3 +96,21 @@ escopo** v1.0.
 
 2. Decidir máquina-host dos perfis/cron (recomendado: máquina da organização).
 3. Conta Google definitiva do Doutor conectada como admin.
+
+
+## Encerramento desta entrega
+
+Esta entrega fecha no que está marcado **✅ entregue** acima: F1, F2 e a tool 11
+de F4 (com o adicional do vínculo por bot). **F3 inteira e a tool 12 de F4
+(`historico`) não foram construídas** — o contrato não avançou até essas fases,
+não é pendência técnica esquecida.
+
+F3 era, pelo próprio texto deste documento, "a entrega de maior valor
+percebido pelo cliente" — registrar isso aqui é para que quem ler depois saiba
+que a ausência foi decisão de escopo/contrato, não descuido.
+
+A partir deste ponto, retomar F3, a tool 12, ou qualquer item da seção "Fora
+do escopo" é trabalho novo, fora do que foi contratado e entregue até aqui —
+vale o que já dizia o topo deste documento: mudança de escopo é novo contrato,
+não uma continuação implícita do atual. Detalhes técnicos de handoff (o que
+falta provisionar, riscos conhecidos) estão em `HANDOFF.md`.
