@@ -1,0 +1,25 @@
+# Cofre do painel: contem a chave de administrador cifrada. Nunca versionar.
+*.cofre
+
+# Sessao Google capturada no onboarding — cookies em texto claro.
+storage_state.json
+.notebooklm/
+
+# Variaveis de ambiente
+.env
+.env.*
+
+# Saida do PyInstaller
+build/
+dist/
+*.spec
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Executavel gerado: artefato de build de ~14 MB. Gere com build_exe.py,
+# ou publique em Releases.
+*.exe

@@ -21,7 +21,6 @@ sender = module_at("send_bot_token", "scripts/bot/send_token.py")
 @pytest.fixture
 def settings(monkeypatch):
     values = {
-        "DATABASE_URL": "postgres://user:password@test.invalid/db?sslmode=require",
         "PUBLIC_URL": "https://test.invalid",
         "NOTEBOOKLM_SERVER_URL": "https://test.invalid",
         "NOTEBOOKLM_BOT_CALLBACK_KEY": "k" * 43,
@@ -31,23 +30,8 @@ def settings(monkeypatch):
     return values
 
 
-def test_validate_does_not_connect(settings, monkeypatch):
-    connect = MagicMock(side_effect=AssertionError("No network"))
-    monkeypatch.setattr(configure.psycopg, "connect", connect)
+def test_validate_succeeds(settings):
     assert configure.main([]) == 0
-    connect.assert_not_called()
-
-
-def test_apply_only_link_migration(settings, monkeypatch):
-    conn = MagicMock()
-    conn.__enter__.return_value = conn
-    connect = MagicMock(return_value=conn)
-    monkeypatch.setattr(configure.psycopg, "connect", connect)
-    assert configure.main(["--apply"]) == 0
-    sql = "\n".join(call.args[0] for call in conn.execute.call_args_list)
-    assert "CREATE TABLE IF NOT EXISTS notebooklm.bot_links" in sql
-    assert "DROP" not in sql and "UPDATE" not in sql and "DELETE FROM" not in sql
-    assert conn.__exit__.call_args.args == (None, None, None)
 
 
 @pytest.mark.parametrize("field,value", [
@@ -55,14 +39,10 @@ def test_apply_only_link_migration(settings, monkeypatch):
     ("NOTEBOOKLM_BOT_CALLBACK_KEY", "short"),
     ("PUBLIC_URL", "http://test.invalid"),
     ("NOTEBOOKLM_SERVER_URL", "https://other.invalid"),
-    ("DATABASE_URL", "postgres://u:p@test.invalid/db?sslmode=disable"),
 ])
-def test_invalid_configuration_stops_before_network(settings, monkeypatch, field, value):
+def test_invalid_configuration_reported(settings, field, value):
     settings[field] = value
-    connect = MagicMock(side_effect=AssertionError("No network"))
-    monkeypatch.setattr(configure.psycopg, "connect", connect)
-    assert configure.main(["--apply"]) == 1
-    connect.assert_not_called()
+    assert configure.main([]) == 1
 
 
 def test_different_keys_rejected(settings, monkeypatch):

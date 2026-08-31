@@ -35,3 +35,9 @@ client/*.exe
 # Cifrado nao e motivo para versionar: e credencial, e um repo entregue a
 # terceiros carregaria a chave de administrador de quem o criou.
 *.cofre
+
+# Backups locais de .env (ex: server/.env.bak.AAAAMMDDHHMMSS) e .bat pessoais
+# de conector, criados ao editar credenciais na maquina de alguem -- nunca
+# sao o template de entrega e podem carregar segredo ou token de uso unico.
+*.env.bak.*
+client/Conectar ao NotebookLM (*).bat

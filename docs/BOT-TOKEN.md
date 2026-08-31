@@ -18,9 +18,11 @@ Ambos os arquivos `.env` sao ignorados pelo Git e excluidos do Docker.
 Estes arquivos locais nao atualizam as envs do EasyPanel/bot em producao.
 
 Validacao sem rede: `.venv-testes/Scripts/python.exe scripts/configure_bot.py`.
-Depois do preenchimento e confirmacao, executar o mesmo comando com `--apply`.
-Ele aplica apenas `server/db/bot_links.sql`, em transacao, com timeouts e sem
-imprimir credenciais. Exige TLS para a conexao remota ao banco.
+Ele so confere se as duas envs sao coerentes entre si; nunca conecta no banco.
+A tabela `notebooklm.bot_links` e criada sozinha no proximo deploy -- o
+Dockerfile roda `python db/apply_schema.py` (idempotente) a cada start do
+container, e `schema.sql` ja inclui `bot_links`. Nao ha passo manual de
+migracao.
 
 O adaptador `scripts/bot/send_token.py` expoe `send_token(link_token,
 google_account, storage_state)` para integrar no backend do bot. Tambem aceita
@@ -28,12 +30,11 @@ google_account, storage_state)` para integrar no backend do bot. Tambem aceita
 terminal. Nao segue redirects e nao imprime cookies ou respostas de erro.
 Ele nao implementa o login/captura do bot externo.
 
-1. Aplicar `server/db/schema.sql` no banco existente (idempotente), para criar
-   `notebooklm.bot_links`. Nao ha migracao automatica no boot.
-2. Configurar `NOTEBOOKLM_BOT_CALLBACK_KEY` no servidor e no backend do bot,
+1. Configurar `NOTEBOOKLM_BOT_CALLBACK_KEY` no servidor e no backend do bot,
    com o mesmo segredo aleatorio de pelo menos 32 bytes. Sem env, o fluxo fica
    desabilitado. Nao colocar essa chave no cliente, conversa MCP ou URL.
-3. Manter `PUBLIC_URL` com a URL HTTPS publica deste servidor e fazer o deploy.
+2. Manter `PUBLIC_URL` com a URL HTTPS publica deste servidor e fazer o deploy
+   -- `notebooklm.bot_links` e criada automaticamente no start do container.
 
 ## Fluxo
 
