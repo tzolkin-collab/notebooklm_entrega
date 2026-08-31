@@ -4,11 +4,10 @@
 # inteiro na maquina do admin — traria o Playwright sem necessidade.
 
 # notebooklm-py fornece o executavel `notebooklm`, que o connect.py invoca por
-# subprocesso para abrir o login no Chromium. Nao aparece como `import` no
-# codigo — e por isso ficou de fora daqui ate 16/08/2026, e o onboarding so
-# funcionava em maquina que ja tivesse as dependencias do servidor instaladas.
-# Mesma versao pinada do servidor: o formato do storage_state precisa bater.
-notebooklm-py==0.6.0
+# subprocesso para abrir o login no Chromium. Como a chamada e por subprocesso e
+# nao por `import`, a dependencia precisa estar declarada aqui explicitamente.
+# Versao pinada igual a do servidor: o formato do storage_state precisa bater.
+notebooklm-py==0.8.1
 
 # Chromium do login. O `playwright install chromium` do setup.py depende dele.
 playwright>=1.50.0

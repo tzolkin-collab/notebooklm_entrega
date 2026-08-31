@@ -18,7 +18,7 @@ import pathlib
 from playwright.sync_api import sync_playwright
 
 PROFILES_DIR = pathlib.Path.home() / ".notebooklm" / "profiles"
-NOTEBOOKLM_URL = "https://notebooklm.google.com"
+NOTEBOOKLM_URL = "https://notebook.google.com"
 
 
 def login(email: str) -> pathlib.Path:
@@ -39,7 +39,7 @@ def login(email: str) -> pathlib.Path:
         # Aguarda ate o usuario estar de volta no NotebookLM (pos-login Google)
         print("[login] Aguardando login...")
         page.wait_for_url(
-            lambda url: "notebooklm.google.com" in url and "accounts.google.com" not in url,
+            lambda url: "notebook.google.com" in url and "accounts.google.com" not in url,
             timeout=180000,  # 3 minutos para o usuario logar
         )
 

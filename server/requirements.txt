@@ -1,6 +1,6 @@
 # Pinado com teto de major: o deploy do escritorio e reconstruido raramente, e
 # um `pip install` meses depois nao pode puxar breaking change sozinho.
-notebooklm-py==0.6.0
+notebooklm-py==0.8.1
 fastmcp==3.3.1
 fastapi>=0.136.0,<1.0
 uvicorn>=0.48.0,<1.0
