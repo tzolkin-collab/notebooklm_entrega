@@ -157,14 +157,14 @@ curl -X POST -H "Authorization: Bearer <token-admin>" -H "Content-Type: applicat
 Settings → Connectors → Add custom connector → `<PUBLIC_URL>/mcp` → Vincular →
 Continuar com Google.
 
-As 12 ferramentas registradas em `mcp_server.py`:
+As 13 ferramentas registradas em `mcp_server.py`:
 
 | Identidade e sessão | Acervo | Compartilhamento |
 |---|---|---|
 | `quem_sou_eu` | `listar_notebooks` | `listar_compartilhados` |
 | `verificar_token` | `perguntar` | `compartilhar_notebook` |
 | `renovar_token` | `listar_fontes` | `status_compartilhamento` |
-| | `criar_notebook` | `sincronizar_compartilhamentos` |
+| `criar_vinculo_bot` | `criar_notebook` | `sincronizar_compartilhamentos` |
 | | `adicionar_fonte` | |
 
 Do escopo original **não** foram construídas: `gerar_relatorio`, `gerar_podcast`,
@@ -188,10 +188,13 @@ Base `/api`. Tudo exige `Authorization: Bearer <token-do-usuário>`, exceto
 | `POST` | `/notebooks/{id}/sources` | 10/min | gestor |
 | `POST` | `/notebooks/{id}/ask` | 20/min | ativo |
 | `GET` | `/team` | 10/min | admin |
+| `POST` | `/admin/bootstrap` | 5/min | `X-Bootstrap-Key` (segredo do servidor) |
 | `POST` | `/admin/users` | 10/min | admin |
 | `POST` | `/admin/onboarding-token` | 10/min | admin |
 | `POST` | `/admin/notebooks-classificacao` | 10/min | admin |
 | `POST` | `/token/upload` | 10/min | — (cadastro pendente) |
+| `POST` | `/token/link` | 5/min | ativo (gera vínculo p/ bot) |
+| `POST` | `/bot/token` | 10/min | `X-Bot-Key` (segredo do bot) |
 
 **401** = token inválido ou inativo. **403** = nível insuficiente, ou token de
 onboarding inválido/expirado/já usado.
@@ -202,16 +205,47 @@ curl -X POST -H "Authorization: Bearer <token>" -H "Content-Type: application/js
   <PUBLIC_URL>/api/notebooks/<id>/ask
 ```
 
-### 4. Bootstrap do primeiro admin
+### 4. Vínculo via bot (WhatsApp e afins)
 
-Não há como emitir token de admin sem um admin. O primeiro sai direto do banco:
+Alternativa ao onboarding manual do item 1, para quem já tem cadastro ativo:
+um bot de chat pode capturar a sessão Google da pessoa e entregá-la ao
+servidor sem que ela precise rodar `connect.py` na própria máquina.
+
+1. A pessoa (já ativa) chama `criar_vinculo_bot` no MCP, ou
+   `POST /api/token/link` com o próprio Bearer — recebe um `link_token` de
+   uso único, válido por 10 minutos.
+2. Ela entrega esse código ao bot confiável.
+3. O backend do bot captura a sessão e chama
+   `POST <PUBLIC_URL>/api/bot/token` com `X-Bot-Key`, o `link_token` e a
+   conta Google identificada no login.
+
+Protocolo completo, erros e limites: **[docs/BOT-TOKEN.md](docs/BOT-TOKEN.md)**.
+Adaptador de referência: `scripts/bot/send_token.py`.
+
+### 5. Bootstrap do primeiro admin
+
+Não há como emitir token de admin sem um admin. Caminho normal, por HTTPS,
+sem acesso direto ao banco:
+
+```bash
+curl -X POST -H "Content-Type: application/json" -H "X-Bootstrap-Key: <NOTEBOOKLM_BOOTSTRAP_KEY>" \
+  -d '{"email":"admin@exemplo.com","nome":"Admin"}' \
+  <PUBLIC_URL>/api/admin/bootstrap
+```
+
+`NOTEBOOKLM_BOOTSTRAP_KEY` é um segredo à parte do `api_token`, definido só no
+ambiente do servidor (ver `server/.env.example`) — quem a possui já teria o
+mesmo alcance com acesso direto ao Postgres. Idempotente: pode ser chamado de
+novo para promover outro email a admin.
+
+Break-glass (sem servidor no ar, acesso direto ao banco):
 
 ```bash
 set DATABASE_URL=postgres://...
 python server/db/gen_token.py --email admin@exemplo.com
 ```
 
-### 5. Classificar os notebooks
+### 6. Classificar os notebooks
 
 Sem isso o fail-closed deixa `juridico` e `financeiro` sem ver nada.
 
@@ -236,15 +270,17 @@ python scripts/classifica_notebooks.py --enviar
 │   ├── db.py · auth.py · config.py
 │   ├── tests/                ← pytest (não entra na imagem)
 │   └── db/
-│       ├── schema.sql        ← audit_log e access_log append-only por trigger
+│       ├── schema.sql        ← audit_log, access_log e bot_links; aplicado
+│       │                        sozinho a cada start do container
 │       ├── apply_schema.py
-│       ├── gen_token.py      ← bootstrap do primeiro admin
+│       ├── gen_token.py      ← bootstrap do primeiro admin, break-glass
 │       └── register.py · check.py · login.py   ← break-glass de admin
 ├── client/                   ← máquina do usuário (nunca recebe a chave Fernet)
 │   ├── connect.py            ← onboarding: login Google + upload do token
 │   ├── setup.py
 │   └── plugin/               ← skill do Claude
 ├── scripts/                  ← classificação dos notebooks por área
+│   └── bot/                  ← adaptador de vínculo por bot (ver item 4 acima)
 └── DEPLOY.md                 ← runbook do servidor
 ```
 
