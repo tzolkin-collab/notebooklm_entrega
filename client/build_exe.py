@@ -6,20 +6,20 @@ Gera o executavel do painel de administracao.
     python build_exe.py
 
 Sai em dist/Administrar Acessos.exe — ~14 MB, autonomo: roda em maquina SEM
-Python instalado. Verificado abrindo com o PATH sem nenhum interpretador.
+Python instalado.
 
 --------------------------------------------------------------------------
 O SMARTSCREEN BLOQUEIA ESTE EXECUTAVEL — E ESTA CERTO
 --------------------------------------------------------------------------
 
-Medido em 17/08/2026, no Windows 11:
+No Windows 11:
 
     (Get-AuthenticodeSignature 'Administrar Acessos.exe').Status  ->  NotSigned
     (Get-AuthenticodeSignature (Get-Command python).Source).Status ->  Valid
 
 O Windows barra executavel sem assinatura e sem reputacao, com a tela "O Windows
-protegeu o seu PC". Nao e o Defender: verificado que o arquivo nao vai para
-quarentena, nao tem Mark-of-the-Web e nao gera deteccao. E reputacao, so.
+protegeu o seu PC". Nao e o Defender: o arquivo nao vai para quarentena, nao
+tem Mark-of-the-Web e nao gera deteccao. E reputacao, so.
 
 Nao ha truque de build que resolva. As saidas reais sao tres:
 
@@ -31,7 +31,7 @@ Nao ha truque de build que resolva. As saidas reais sao tres:
 3. O .bat com Python instalado — que chama o python.exe, assinado, e nao gera
    aviso nenhum.
 
-Por isso o ACESSOS.md documenta o .bat como caminho principal e este exe como
+Por isso o README documenta o .bat como caminho principal e este exe como
 alternativa. O exe continua util para pendrive circulando entre maquinas, onde
 nao da para exigir Python.
 
@@ -49,7 +49,7 @@ O conector (app.pyw -> connect.py) nao: ele precisa do Playwright e de um
 Chromium de ~150 MB, que nao cabe num executavel e continua sendo baixado na
 primeira execucao de qualquer jeito. Empacota-lo daria um exe grande que ainda
 assim exigiria download — pouco ganho, bastante fragilidade (o bundling do
-driver do Playwright pelo PyInstaller e conhecidamente sensivel a versao).
+driver do Playwright pelo PyInstaller e sensivel a versao).
 
 Para o conector, o caminho e o "Conectar ao NotebookLM.bat" com Python
 instalado na maquina de onboarding. Como e UMA maquina, nao a de cada advogado,

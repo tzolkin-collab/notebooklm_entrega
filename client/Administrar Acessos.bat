@@ -25,10 +25,9 @@ if errorlevel 1 (
 rem ---------------------------------------------------------------------
 rem 2. Existem as dependencias?
 rem
-rem Esta verificacao roda com python.exe, que TEM console. Sem ela, o
-rem `start "" pythonw` abaixo desanexa o processo e descarta o stderr: se
-rem faltasse um componente, a janela nao abriria e nao apareceria mensagem
-rem alguma. Duplo clique, nada acontece, nenhuma pista do motivo.
+rem Esta verificacao roda com python.exe, que tem console, entao qualquer
+rem mensagem aparece aqui. O `start "" pythonw` do passo 3 desanexa o
+rem processo e nao teria onde mostrar texto.
 rem ---------------------------------------------------------------------
 python -c "import cryptography" >nul 2>&1
 if errorlevel 1 (

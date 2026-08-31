@@ -26,9 +26,11 @@ from tkinter import messagebox, ttk
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 
-# Preencher no empacotamento, junto com o <PUBLIC_URL> do plugin.json e do
-# SKILL.md. Se ficar vazio, o campo aparece editavel na janela.
-SERVIDOR_PADRAO = ""
+# Mesmo endereco embutido no painel de administracao. Quem faz o onboarding
+# recebe um codigo de acesso, nao um endereco de servidor, entao o valor ja vem
+# no programa. Deixar vazio faz o campo reaparecer na janela, para apontar a
+# outro ambiente.
+SERVIDOR_PADRAO = "https://connectors-notebooklm.tpgavy.easypanel.host"
 
 COR_FUNDO = "#f4f4f2"
 COR_OK = "#2f7d5d"
@@ -179,9 +181,9 @@ class App(tk.Tk):
 
 def dependencias_ok():
     """
-    O connect.py chama o executavel `notebooklm`. Se ele nao existir, o erro sai
-    como 'arquivo nao encontrado' no meio do processo — confuso para quem so
-    queria clicar um botao. Melhor detectar antes e oferecer a instalacao.
+    O connect.py chama o executavel `notebooklm`. A presenca dele e conferida
+    na abertura, para que a instalacao seja oferecida de uma vez, antes de o
+    processo comecar.
     """
     from shutil import which
     return which("notebooklm") is not None

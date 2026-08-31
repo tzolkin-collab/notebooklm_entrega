@@ -1,14 +1,15 @@
 ---
 name: aaa-notebooklm
-description: Skill do NotebookLM (servidor-gerente da equipe anterior) — consulta notebooks com citacoes, gerencia os tokens Google e diagnostica falhas de autenticacao. Ative sempre que o usuario mencionar "NotebookLM", "notebook", "consulta juridica", "token", "auth", "connector", ou usar /notebook. Ative TAMBEM em qualquer sintoma de falha do conector — "nao autenticado", "connector requires authentication", "token expirado", "nao consigo ler o notebook", "renova o token" — e quando alguem fizer uma pergunta respondivel com os documentos indexados.
+description: Skill do NotebookLM (servidor-gerente da organizacao) — consulta notebooks com citacoes, gerencia os tokens Google e diagnostica falhas de autenticacao. Ative sempre que o usuario mencionar "NotebookLM", "notebook", "consulta juridica", "token", "auth", "connector", ou usar /notebook. Ative TAMBEM em qualquer sintoma de falha do conector — "nao autenticado", "connector requires authentication", "token expirado", "nao consigo ler o notebook", "renova o token" — e quando alguem fizer uma pergunta respondivel com os documentos indexados.
 ---
 
 # NotebookLM — servidor-gerente
 
-> `<PUBLIC_URL>` e a URL do servidor da organização. Substitua antes de reempacotar
-> o `.skill` — este arquivo nao le variavel de ambiente. Tem que bater com o
-> `PUBLIC_URL` do servidor e com o `redirect_uri` registrado no Google Cloud
-> Console; se divergir, o sintoma e `Erro 400: redirect_uri_mismatch`.
+> O endereco do servidor aparece escrito neste arquivo porque a skill nao le
+> variavel de ambiente. Se o servidor mudar de host, troque aqui, no
+> `plugin.json` e em `references/commands.md`, e reempacote o `.skill`. O valor
+> tem que bater com o `PUBLIC_URL` do servidor e com o `redirect_uri` registrado
+> no Google Cloud Console; se divergir, o sintoma e `Erro 400: redirect_uri_mismatch`.
 
 Voce opera o NotebookLM atraves de um **servidor-gerente** no EasyPanel, que guarda os
 tokens Google (cifrados com Fernet) no Postgres, identifica o usuario, aplica o nivel
@@ -57,7 +58,7 @@ Sempre classifique o erro **antes** de sugerir acao. A mensagem diz qual camada 
 |---|---|---|---|
 | `This connector requires authentication` | Token 1 | Connector nunca foi vinculado, ou o OAuth expirou | Settings → Connectors → Vincular → Continuar com Google |
 | `Erro 400: redirect_uri_mismatch` na tela do Google | Token 1 | `/auth/callback` do host atual nao esta registrado no Google Cloud Console | Registrar o URI exato — ver "Verificar o deploy", item 2 |
-| `{"erro":"Nao autenticado"}` (dict no corpo) | Token 1 | Servidor subiu **sem** auth provider — a chamada passou o portao e morreu na tool | Bug de deploy: `GOOGLE_OAUTH_CLIENT_ID/SECRET` vazios. Ver "Verificar o deploy" |
+| `{"erro":"Nao autenticado"}` (dict no corpo) | Token 1 | Servidor subiu **sem** auth provider — a chamada passou o portao e morreu na tool | `GOOGLE_OAUTH_CLIENT_ID/SECRET` vazios. Ver "Verificar o deploy" |
 | `status: expired` / `Authentication expired or invalid` / `Redirected to accounts.google.com` | Token 2 | Cookies do Google rotacionaram e venceram | `notebooklm login` + re-rodar `connect.py` |
 | `ValueError` em `get_storage_state` / "sem token" | Token 2 | Email autenticado nao tem storage_state no Postgres | Rodar `connect.py` **com o mesmo email do OAuth** |
 | 401 na REST | Token 1 | `api_token` invalido ou usuario inativo | Admin reemite via `POST /api/admin/users` |
@@ -90,7 +91,7 @@ Identificacao por login Google, sem digitar email.
 - `adicionar_fonte(notebook_id, url | drive_file_id+titulo)` — gestor ou admin
 
 **Adicionar o conector (uma vez):** Settings → Connectors → Add custom connector →
-`<PUBLIC_URL>/mcp` → Vincular →
+`https://connectors-notebooklm.tpgavy.easypanel.host/mcp` → Vincular →
 Continuar com Google.
 
 > O Claude.ai web exige OAuth em custom connectors (nao aceita token simples na UI).
@@ -120,7 +121,7 @@ forma de renovar o token 2 quando o connector esta inacessivel.
 
 ```bash
 curl -s -H "Authorization: Bearer <api_token>" \
-  <PUBLIC_URL>/api/auth/check
+  https://connectors-notebooklm.tpgavy.easypanel.host/api/auth/check
 ```
 
 ---
@@ -162,12 +163,12 @@ python connect.py --email <email> --nome "<Nome>"
 # 1) admin emite o onboarding token de uso unico, ligado ao email
 curl -X POST -H "Authorization: Bearer <token_admin>" -H "Content-Type: application/json" \
   -d '{"email":"pessoa@escritorio.com","ttl_horas":48}' \
-  <PUBLIC_URL>/api/admin/onboarding-token
+  https://connectors-notebooklm.tpgavy.easypanel.host/api/admin/onboarding-token
 
 # 2) o membro roda o connect.py (entra PENDENTE) e o admin ativa:
 curl -X POST -H "Authorization: Bearer <token_admin>" -H "Content-Type: application/json" \
   -d '{"email":"pessoa@escritorio.com","nivel":"juridico","ativo":true}' \
-  <PUBLIC_URL>/api/admin/users
+  https://connectors-notebooklm.tpgavy.easypanel.host/api/admin/users
 ```
 
 > A chave Fernet **nunca** vai para a maquina do usuario. `server/db/register.py`,
@@ -180,7 +181,7 @@ curl -X POST -H "Authorization: Bearer <token_admin>" -H "Content-Type: applicat
 
 ---
 
-## Verificar o deploy (antes de culpar o token)
+## Verificar o deploy
 
 ```
 GET /health                                   -> {"status":"ok"}
@@ -190,18 +191,18 @@ GET /.well-known/oauth-authorization-server   -> issuer, authorize, token, regis
 Se o segundo **nao existir**, o servidor subiu **sem auth provider** e todas as tools
 vao devolver `{"erro":"Nao autenticado"}`.
 
-**Tres armadilhas de configuracao, em ordem de frequencia:**
+**Tres pontos de configuracao que precisam conferir, em ordem de frequencia:**
 
 1. **`GOOGLE_OAUTH_CLIENT_ID` ou `GOOGLE_OAUTH_CLIENT_SECRET` vazios.** O
-   `auth_provider` fica `None`, o `FastMCP` sobe sem auth e **nao ha erro no log** —
-   falha 100% silenciosa. Sintoma exato: o dict `{"erro":"Nao autenticado"}`.
+   `auth_provider` fica `None`, o `FastMCP` sobe sem auth e **nao ha erro no log**.
+   Sintoma exato: o dict `{"erro":"Nao autenticado"}`.
 2. **`redirect_uri` nao registrado no Google Cloud Console.** Sintoma: `Erro 400:
    redirect_uri_mismatch` na tela do Google, depois de clicar em Vincular. O
    `GoogleProvider` monta o callback como `base_url.rstrip("/") + redirect_path`, com
    `redirect_path` default `/auth/callback`. Para este servidor, o valor exato e:
 
    ```
-   <PUBLIC_URL>/auth/callback
+   https://connectors-notebooklm.tpgavy.easypanel.host/auth/callback
    ```
 
    Tem que estar em **URIs de redirecionamento autorizados** do cliente OAuth 2.0
@@ -241,7 +242,7 @@ so o `status`.
 
 ## API REST
 
-Base: `<PUBLIC_URL>/api`
+Base: `https://connectors-notebooklm.tpgavy.easypanel.host/api`
 Auth: `Authorization: Bearer <token-do-usuario>` (o nivel vem do token, nunca de header).
 Excecao: `/token/upload` usa `X-Onboarding-Token` (uso unico, por-usuario) — e o bootstrap.
 
@@ -263,26 +264,9 @@ Excecao: `/token/upload` usa `X-Onboarding-Token` (uso unico, por-usuario) — e
 
 ## Infraestrutura
 
-- **Servidor:** `<PUBLIC_URL>` (MCP em `/mcp`, REST em `/api`) — preenchido no
+- **Servidor:** `https://connectors-notebooklm.tpgavy.easypanel.host` (MCP em `/mcp`, REST em `/api`) — preenchido no
   empacotamento do `.skill`; o valor tem que ser o mesmo do `PUBLIC_URL` do servidor
 - **Postgres:** tabelas `users`, `tokens`, `notebooks`, `audit_log` (append-only por trigger)
-- **Repo:** `<repositorio>` (renomeado; o antigo
-  `notebooklmxclaude_AdvocaciaAi` redireciona)
-- **Hosts aposentados:** `connectors-notebooklm.tpgavy.easypanel.host` — morto (404).
-  Se qualquer host aparecer escrito literalmente em doc ou config, e referencia velha:
-  o valor correto vem sempre do `PUBLIC_URL` do deploy em uso.
-
----
-
-## Estado atual (27/07/2026)
-
-| Item | Status |
-|---|---|
-| Servidor `/health` | OK |
-| OAuth provider publicado (`.well-known`) | OK — client id/secret presentes |
-| Auth dual (OAuth + Bearer Postgres) no `/mcp` | OK — commit `476411f` |
-| Connector vinculado no Claude | **pendente** — exige acao interativa do usuario |
-| Scrap token do perfil local `default` | **expirado** — exige `notebooklm login` |
-| `redirect_uri` `/auth/callback` no Google Cloud Console | ⚠️ **pendente** — causa do `redirect_uri_mismatch` |
-| Credencial de Postgres no historico do git | ⚠️ removida do HEAD, **pendente de rotacao** |
-| Cron de refresh de token | recomendado, nao configurado |
+- **Hosts aposentados:** `memory-be-main.tpgavy.easypanel.host` — fora do ar,
+  responde 404 em HTML. Se aparecer em alguma config antiga, e referencia velha:
+  o endereco em uso e o do servidor listado acima.

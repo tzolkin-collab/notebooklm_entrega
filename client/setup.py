@@ -18,12 +18,20 @@ import pathlib
 
 
 def run(cmd: list[str]) -> None:
-    subprocess.run(cmd, check=True)
+    try:
+        subprocess.run(cmd, check=True)
+    except subprocess.CalledProcessError as e:
+        # A falha e reportada com o comando e o codigo de saida, que e o que
+        # permite diagnosticar.
+        sys.exit(f"\nERRO: o comando abaixo falhou (codigo {e.returncode}):\n"
+                 f"  {' '.join(cmd)}\n")
 
 
 def main():
     print("\n=== NotebookLM Connector - Setup do cliente ===\n")
 
+    # A conferencia vem antes do passo 1: o passo 2 baixa um Chromium de
+    # ~150 MB, e tudo que puder ser validado deve ser validado antes dele.
     if not os.getenv("NOTEBOOKLM_ONBOARDING_TOKEN"):
         print("ERRO: defina o token de onboarding (uso único) antes de rodar:")
         print('  set NOTEBOOKLM_ONBOARDING_TOKEN=<peça ao admin>\n')

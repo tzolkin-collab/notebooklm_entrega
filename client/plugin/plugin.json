@@ -6,11 +6,11 @@
   "project": {
     "name": "NotebookLM Connector"
   },
-  "_server_note": "As tres URLs abaixo sao PLACEHOLDERS. Substitua <PUBLIC_URL> pelo host do servidor do escritorio ANTES de reempacotar o .skill — este arquivo nao le variavel de ambiente. Deve bater com o PUBLIC_URL do servidor e com o redirect_uri registrado no Google Cloud Console.",
+  "_server_note": "O endereco abaixo esta escrito no arquivo porque o plugin nao le variavel de ambiente. Se o servidor mudar de host, troque aqui, no SKILL.md e em references/commands.md, e reempacote o .skill. Tem que bater com o PUBLIC_URL do servidor e com o redirect_uri registrado no Google Cloud Console.",
   "server": {
-    "url": "<PUBLIC_URL>",
-    "mcp_connector": "<PUBLIC_URL>/mcp",
-    "rest_base": "<PUBLIC_URL>/api",
+    "url": "https://connectors-notebooklm.tpgavy.easypanel.host",
+    "mcp_connector": "https://connectors-notebooklm.tpgavy.easypanel.host/mcp",
+    "rest_base": "https://connectors-notebooklm.tpgavy.easypanel.host/api",
     "rest_auth": "Authorization: Bearer <token-do-usuário>",
     "bootstrap_key_header": "X-Onboarding-Token (uso único, por-usuário; apenas /token/upload)",
     "health_endpoint": "/health"
@@ -32,7 +32,7 @@
     },
     "token_storage": "%USERPROFILE%\\.notebooklm\\profiles\\",
     "env": {
-      "NOTEBOOKLM_SERVER_URL": "obrigatoria — sem default; connect.py recusa rodar sem ela"
+      "NOTEBOOKLM_SERVER_URL": "opcional — sobrepoe o endereco embutido em connect.py (SERVIDOR_PADRAO)"
     }
   },
   "admin_tools": {

@@ -19,19 +19,24 @@ import json
 import os
 import pathlib
 import shutil
+import re
 import subprocess
 import sys
+import urllib.error
 import urllib.request
 
 # ── Configuracao do servidor ────────────────────────────────────────────────────
-# Sem default: este script envia o storage_state (cookies da sessao Google do
-# usuario) para SERVER_URL. Um default embutido mandaria a credencial para o
-# servidor errado sem ninguem perceber.
-SERVER_URL = os.getenv("NOTEBOOKLM_SERVER_URL", "").rstrip("/")
+# Este script envia o storage_state (cookies da sessao Google do usuario) para
+# SERVER_URL, entao o endereco precisa estar certo — e por isso ele ja vem no
+# programa, em vez de digitado. A variavel de ambiente continua valendo, para
+# apontar a outro ambiente sem editar o arquivo.
+SERVIDOR_PADRAO = "https://connectors-notebooklm.tpgavy.easypanel.host"
+
+SERVER_URL = (os.getenv("NOTEBOOKLM_SERVER_URL") or SERVIDOR_PADRAO).rstrip("/")
 if not SERVER_URL:
     sys.exit(
-        "ERRO: defina a variavel de ambiente NOTEBOOKLM_SERVER_URL com a URL do "
-        "servidor do escritorio (ex.: https://<host>). Peca ao admin."
+        "ERRO: nao ha endereco de servidor configurado. Defina a variavel de "
+        "ambiente NOTEBOOKLM_SERVER_URL com a URL do servidor da organizacao."
     )
 
 ONBOARDING_TOKEN = os.getenv("NOTEBOOKLM_ONBOARDING_TOKEN", "")
@@ -44,6 +49,19 @@ if not ONBOARDING_TOKEN:
 PROFILES_DIR = pathlib.Path.home() / ".notebooklm" / "profiles"
 
 
+def nome_de_perfil(bruto: str) -> str:
+    """
+    Reduz o texto a algo que possa ser nome de pasta.
+
+    O perfil vira uma pasta sob PROFILES_DIR, e essa pasta e apagada ao final do
+    onboarding. Como o valor vem de fora — do email digitado ou de --profile —
+    ele e reduzido aqui a letras, digitos, ponto, hifen e sublinhado, de modo que
+    o resultado seja sempre um unico nome de pasta.
+    """
+    limpo = re.sub(r"[^A-Za-z0-9._-]", "_", bruto).strip("._-")
+    return limpo or "default"
+
+
 def run_login(profile: str) -> None:
     """Abre o Chromium para login Google via notebooklm CLI."""
     print(f"\n[1/3] Abrindo o navegador para login Google (perfil: {profile})...")
@@ -54,10 +72,9 @@ def run_login(profile: str) -> None:
             capture_output=False,
         )
     except FileNotFoundError:
-        # O binario `notebooklm` vem do pacote notebooklm-py. Como e invocado por
-        # subprocesso e nao por import, a ausencia dele so aparece aqui — e o
-        # WinError 2 cru ("o sistema nao pode encontrar o arquivo especificado")
-        # nao diz a ninguem qual arquivo, nem o que instalar.
+        # O binario `notebooklm` vem do pacote notebooklm-py e e chamado por
+        # subprocesso. O WinError 2 padrao nao nomeia o arquivo procurado, entao
+        # a mensagem abaixo diz qual e e como instala-lo.
         print("[ERRO] O programa `notebooklm` nao esta instalado nesta maquina.")
         print()
         print("       Instale as dependencias do cliente:")
@@ -91,7 +108,14 @@ def limpar_perfil_local(profile: str) -> None:
     Nao e opcional nem best-effort silencioso: se falhar, avisa em voz alta, para
     que alguem apague a mao.
     """
-    alvo = PROFILES_DIR / profile
+    base = PROFILES_DIR.resolve()
+    alvo = (PROFILES_DIR / profile).resolve()
+    # O apagamento fica restrito a PROFILES_DIR: o alvo e resolvido e conferido
+    # antes de qualquer remocao.
+    if base not in alvo.parents:
+        print(f"\n  [ATENCAO] Caminho de perfil inesperado ({alvo}). Nao apaguei nada.")
+        print("            Confira e apague a mao se necessario.")
+        return
     try:
         shutil.rmtree(alvo)
         print(f"     Perfil local apagado: {alvo}")
@@ -120,9 +144,9 @@ def upload(email: str, nome: str, state: dict, profile: str) -> None:
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             data = json.loads(resp.read().decode())
-        print(f"\n[OK] Token enviado com sucesso!")
-        print(f"     Usuario: {data['email']}")
-        print(f"     Cookies: {data['cookies']}")
+        print("\n[OK] Token enviado com sucesso!")
+        print(f"     Usuario: {data.get('email', email)}")
+        print(f"     Cookies: {data.get('cookies', '?')}")
         if data.get("aviso"):
             print(f"\n  {data['aviso']}")
         limpar_perfil_local(profile)
@@ -143,7 +167,7 @@ def main():
                         help="Nome do perfil local (padrao: derivado do email)")
     args = parser.parse_args()
 
-    profile = args.profile or args.email.split("@")[0]
+    profile = nome_de_perfil(args.profile or args.email.split("@")[0])
 
     print("=" * 55)
     print(" Conector NotebookLM")

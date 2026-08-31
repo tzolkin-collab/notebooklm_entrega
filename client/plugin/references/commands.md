@@ -1,9 +1,8 @@
 # Referencia de Comandos — NotebookLM
 
-> `<PUBLIC_URL>` e a URL do servidor da organização. Substitua antes de
-> reempacotar o `.skill` — este arquivo nao le variavel de ambiente. Tem que
-> bater com o `PUBLIC_URL` do servidor e com o `redirect_uri` registrado no
-> Google Cloud Console.
+> O endereco do servidor aparece escrito neste arquivo porque a skill nao le
+> variavel de ambiente. Se o servidor mudar de host, troque aqui, no `SKILL.md`
+> e no `plugin.json`, e reempacote o `.skill`.
 
 Ha dois caminhos: o **conector MCP** (preferencial, no Claude) e a **API REST** (n8n/automacoes).
 
@@ -22,13 +21,13 @@ Disponiveis apos vincular o conector (OAuth). O usuario e identificado pelo logi
 | `verificar_token()` | Testa via rede se o token Google ainda vale |
 
 Adicionar o conector (uma vez): Settings -> Connectors -> Add custom connector ->
-URL `<PUBLIC_URL>/mcp` -> Vincular -> Continuar com Google.
+URL `https://connectors-notebooklm.tpgavy.easypanel.host/mcp` -> Vincular -> Continuar com Google.
 
 ---
 
 ## 2. API REST (n8n / automacoes)
 
-Base: `<PUBLIC_URL>/api`
+Base: `https://connectors-notebooklm.tpgavy.easypanel.host/api`
 Auth: `Authorization: Bearer <token-do-usuário>` — o nível vem do token.
 O token sai do onboarding admin (POST /admin/users) ou de `gen_token.py`.
 
@@ -38,43 +37,43 @@ curl -X POST \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"question": "<pergunta>"}' \
-  <PUBLIC_URL>/api/notebooks/<id>/ask
+  https://connectors-notebooklm.tpgavy.easypanel.host/api/notebooks/<id>/ask
 ```
 
 ### Listar notebooks
 ```bash
 curl -H "Authorization: Bearer <token>" \
-  <PUBLIC_URL>/api/notebooks
+  https://connectors-notebooklm.tpgavy.easypanel.host/api/notebooks
 ```
 
 ### Listar fontes
 ```bash
 curl -H "Authorization: Bearer <token>" \
-  <PUBLIC_URL>/api/notebooks/<id>/sources
+  https://connectors-notebooklm.tpgavy.easypanel.host/api/notebooks/<id>/sources
 ```
 
 ### Adicionar fonte (gestor+)
 ```bash
 curl -X POST -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" -d '{"url": "<url>"}' \
-  <PUBLIC_URL>/api/notebooks/<id>/sources
+  https://connectors-notebooklm.tpgavy.easypanel.host/api/notebooks/<id>/sources
 ```
 
 ### Criar notebook (admin)
 ```bash
 curl -X POST -H "Authorization: Bearer <token_admin>" \
   -H "Content-Type: application/json" -d '{"title": "<nome>"}' \
-  <PUBLIC_URL>/api/notebooks
+  https://connectors-notebooklm.tpgavy.easypanel.host/api/notebooks
 ```
 
 ### Verificar token / status da equipe
 ```bash
 curl -H "Authorization: Bearer <token>" \
-  <PUBLIC_URL>/api/auth/check
+  https://connectors-notebooklm.tpgavy.easypanel.host/api/auth/check
 
 # equipe (admin)
 curl -H "Authorization: Bearer <token_admin>" \
-  <PUBLIC_URL>/api/team
+  https://connectors-notebooklm.tpgavy.easypanel.host/api/team
 ```
 
 ### Ativar usuário / emitir token (admin)
@@ -82,7 +81,7 @@ curl -H "Authorization: Bearer <token_admin>" \
 curl -X POST -H "Authorization: Bearer <token_admin>" \
   -H "Content-Type: application/json" \
   -d '{"email":"<email>","nivel":"juridico","ativo":true}' \
-  <PUBLIC_URL>/api/admin/users
+  https://connectors-notebooklm.tpgavy.easypanel.host/api/admin/users
 # -> resposta contém o api_token Bearer do usuário
 ```
 
