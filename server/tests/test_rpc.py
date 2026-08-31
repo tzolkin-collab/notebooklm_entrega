@@ -25,6 +25,22 @@ class MockNotebook:
         self.area = area  # Não-standard, para testes
 
 
+class MockSource:
+    """
+    Mock de Source retornado pela lib ao adicionar uma fonte.
+
+    Sem `.type` de proposito: o objeto Source real da lib nunca teve esse
+    atributo (sempre foi `.kind`, uma property). Um MagicMock generico nao
+    pegaria rpc.py lendo `.type` por engano, porque MagicMock responde
+    qualquer atributo sem erro -- foi assim que o bug real passou pelos
+    testes e so apareceu contra o NotebookLM de verdade.
+    """
+    def __init__(self, id: str, title: str, kind: str = "WEBSITE"):
+        self.id = id
+        self.title = title
+        self.kind = kind
+
+
 class MockUser:
     """Mock de usuário do Postgres."""
     def __init__(self, email: str, nivel: str = "juridico"):
@@ -329,3 +345,45 @@ class TestParallelAreas:
         # financeiro não pode acessar juridico
         with pytest.raises(PermissionError):
             _check_notebook_access("user2@example.com", "nb_juridico_1")
+
+
+class TestAddSource:
+    """
+    add_source_url/add_source_drive tinham um bug real: liam `source.type`,
+    atributo que o objeto Source da lib nunca teve (sempre foi `.kind`). Como
+    o `Source` de retorno era um MagicMock generico nos testes antigos, o
+    `AttributeError` nunca aparecia -- so em producao, contra a lib de
+    verdade, virando 500 em toda chamada de /notebooks/{id}/sources.
+    """
+
+    @patch('rpc.db.get_user')
+    @patch('rpc.get_client_for')
+    async def test_add_source_url_reads_kind_not_type(self, mock_get_client, mock_get_user):
+        mock_get_user.return_value = MockUser("admin@example.com", nivel="admin")
+        mock_client = AsyncMock()
+        mock_client.sources.add_url = AsyncMock(
+            return_value=MockSource("src1", "Pagina de teste", kind="WEBSITE"))
+        mock_get_client.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_get_client.return_value.__aexit__ = AsyncMock(return_value=None)
+
+        from rpc import add_source_url
+
+        result = await add_source_url("admin@example.com", "nb1", "https://example.com")
+
+        assert result == {"id": "src1", "title": "Pagina de teste", "type": "WEBSITE"}
+
+    @patch('rpc.db.get_user')
+    @patch('rpc.get_client_for')
+    async def test_add_source_drive_reads_kind_not_type(self, mock_get_client, mock_get_user):
+        mock_get_user.return_value = MockUser("admin@example.com", nivel="admin")
+        mock_client = AsyncMock()
+        mock_client.sources.add_drive = AsyncMock(
+            return_value=MockSource("src2", "Documento", kind="GOOGLE_DOCS"))
+        mock_get_client.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_get_client.return_value.__aexit__ = AsyncMock(return_value=None)
+
+        from rpc import add_source_drive
+
+        result = await add_source_drive("admin@example.com", "nb1", "file123", "Documento")
+
+        assert result == {"id": "src2", "title": "Documento", "type": "GOOGLE_DOCS"}

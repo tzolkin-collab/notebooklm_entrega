@@ -98,7 +98,7 @@ async def add_source_url(email: str, notebook_id: str, url: str) -> dict:
     _check_notebook_access(email, notebook_id)
     async with get_client_for(email) as client:
         source = await client.sources.add_url(notebook_id, url)
-        return {"id": source.id, "title": source.title, "type": str(source.type)}
+        return {"id": source.id, "title": source.title, "type": str(source.kind)}
 
 
 async def list_sources(email: str, notebook_id: str) -> list[dict]:
@@ -127,7 +127,7 @@ async def add_source_drive(
     _check_notebook_access(email, notebook_id)
     async with get_client_for(email) as client:
         source = await client.sources.add_drive(notebook_id, file_id, title, mime_type=mime_type)
-        return {"id": source.id, "title": source.title, "type": str(source.type)}
+        return {"id": source.id, "title": source.title, "type": str(source.kind)}
 
 
 async def create_notebook(email: str, title: str) -> dict:
