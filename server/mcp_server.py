@@ -20,6 +20,7 @@ from mcp.server.auth.provider import AccessToken
 
 import rpc
 import db
+import bot_link
 import auth as auth_mod
 from config import (
     PUBLIC_URL, GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET,
@@ -288,6 +289,23 @@ async def adicionar_fonte(
     if not titulo:
         return {"erro": "titulo e obrigatorio para fonte do Google Drive"}
     return await rpc.add_source_drive(email, notebook_id, drive_file_id, titulo, mime_type)
+
+
+@mcp.tool()
+async def criar_vinculo_bot() -> dict:
+    """Gera codigo de uso unico (10 min) para o bot enviar SUA sessao Google.
+
+    Nao recebe email nem cookies. Entregue apenas o codigo ao bot confiavel.
+    """
+    email = _current_email()
+    if not email:
+        return {"erro": "Nao autenticado"}
+    if not _rate_ok(email):
+        return {"erro": "Limite de requisicoes atingido"}
+    try:
+        return bot_link.issue_link(email)
+    except PermissionError as exc:
+        return {"erro": str(exc)}
 
 
 @mcp.tool()

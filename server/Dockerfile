@@ -82,4 +82,8 @@ EXPOSE 80
 # 1 worker e o limite de NOTEBOOKLM_MCP_RATE_PER_MIN vale de verdade.
 # Adicionar `--workers N` multiplica o limite efetivo por N, sem erro e sem log.
 # Se precisar escalar, troque antes o rate limit por um backend compartilhado.
-CMD ["sh", "-c", "python -m uvicorn main:app --host 0.0.0.0 --port 80 --proxy-headers --forwarded-allow-ips=\"${FORWARDED_ALLOW_IPS:-127.0.0.1}\""]
+# Aplica o schema (idempotente, so CREATE ... IF NOT EXISTS / ADD COLUMN IF NOT
+# EXISTS) antes de subir o servidor, para que migracoes como notebooklm.bot_links
+# existam mesmo em um deploy novo sem passo manual. Falha de schema interrompe o
+# start (fail-fast) em vez de subir a API contra um banco desatualizado.
+CMD ["sh", "-c", "python db/apply_schema.py && python -m uvicorn main:app --host 0.0.0.0 --port 80 --proxy-headers --forwarded-allow-ips=\"${FORWARDED_ALLOW_IPS:-127.0.0.1}\""]

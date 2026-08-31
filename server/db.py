@@ -107,6 +107,57 @@ def get_google_account(email: str) -> str | None:
     return row[0] if row else None
 
 
+def create_bot_link(email: str) -> str:
+    """Codigo de uso unico; a identidade vem da sessao autenticada, nao do bot."""
+    token = "link_" + secrets.token_urlsafe(32)
+    with _conn() as conn:
+        row = conn.execute(
+            """INSERT INTO notebooklm.bot_links (token_hash, email, expires_at)
+               SELECT %s, email, now() + interval '10 minutes'
+                 FROM notebooklm.users WHERE email = %s AND ativo = true
+               RETURNING email""",
+            (_hash_token(token), email),
+        ).fetchone()
+        if not row:
+            raise PermissionError("Usuario inexistente ou inativo")
+    return token
+
+
+def save_bot_storage_state(token: str, state: dict, google_account: str) -> str | None:
+    """Consome o vinculo e salva com Fernet NA MESMA transacao.
+
+    Falha no INSERT desfaz o consumo. UPDATE serializa callbacks concorrentes.
+    A conta Google reportada e uma declaracao do bot confiavel, nao prova OAuth.
+    """
+    encrypted = _fernet.encrypt(json.dumps(state).encode()).decode()
+    with _conn() as conn:
+        row = conn.execute(
+            """UPDATE notebooklm.bot_links AS link SET usado_em = now()
+               WHERE token_hash = %s AND usado_em IS NULL AND expires_at > now()
+                 AND lower(link.email) = %s
+                 AND EXISTS (SELECT 1 FROM notebooklm.users AS u
+                             WHERE u.email = link.email AND u.ativo = true)
+               RETURNING email""",
+            (_hash_token(token), google_account),
+        ).fetchone()
+        if not row:
+            return None
+        email = row[0]
+        conn.execute(
+            """INSERT INTO notebooklm.tokens (email, storage_state, google_account, atualizado_em)
+               VALUES (%s, %s, %s, now())
+               ON CONFLICT (email) DO UPDATE SET storage_state = EXCLUDED.storage_state,
+                   google_account = EXCLUDED.google_account, atualizado_em = now()""",
+            (email, encrypted, google_account),
+        )
+        conn.execute(
+            """INSERT INTO notebooklm.access_log (evento, identity_email, session_account, detalhe)
+               VALUES ('sessao_enviada', %s, %s, 'via bot; vinculo de uso unico')""",
+            (email, google_account),
+        )
+    return email
+
+
 # ── Onboarding tokens (uso único, por-usuário) ───────────────────────────────────
 
 def create_onboarding_token(email: str, criado_por: str, ttl_horas: int = 48) -> str:

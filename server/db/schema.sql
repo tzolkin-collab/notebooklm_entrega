@@ -42,6 +42,15 @@ CREATE TABLE IF NOT EXISTS notebooklm.onboarding_tokens (
     criado_em    TIMESTAMPTZ DEFAULT now()
 );
 
+-- Vinculo do bot: separado do onboarding; so para usuarios ja ativos.
+CREATE TABLE IF NOT EXISTS notebooklm.bot_links (
+    token_hash TEXT PRIMARY KEY,
+    email TEXT NOT NULL REFERENCES notebooklm.users(email) ON DELETE CASCADE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    usado_em TIMESTAMPTZ,
+    criado_em TIMESTAMPTZ DEFAULT now()
+);
+
 -- Audit log imutável
 CREATE TABLE IF NOT EXISTS notebooklm.audit_log (
     id           BIGSERIAL PRIMARY KEY,

@@ -2,6 +2,8 @@ import logging
 import os
 import threading
 import time
+import secrets
+import json
 from collections import defaultdict, deque
 
 from fastapi import FastAPI, HTTPException, Request, Security, Depends, Header
@@ -16,6 +18,7 @@ from starlette.responses import JSONResponse
 import rpc
 import auth
 import db
+import bot_link
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -357,6 +360,60 @@ async def admin_onboarding_token(request: Request, body: OnboardingTokenRequest,
 
 
 # ── Conector: upload de token (bootstrap) ────────────────────────────────────────
+
+@app.post("/token/link")
+@limiter.limit("5/minute")
+async def create_token_link(request: Request, user: dict = Depends(require_active_user)):
+    """Emite um vinculo curto para a propria conta autenticada."""
+    return JSONResponse(bot_link.issue_link(user["email"]), headers={"Cache-Control": "no-store"})
+
+
+def require_bot(x_bot_key: str | None = Header(None, alias="X-Bot-Key")):
+    expected = bot_link.bot_key()
+    if not expected:
+        raise HTTPException(status_code=503, detail="Integracao do bot desabilitada")
+    if not x_bot_key or not secrets.compare_digest(x_bot_key.encode(), expected.encode()):
+        raise HTTPException(status_code=401, detail="Credencial do bot invalida")
+
+
+@app.post("/bot/token", dependencies=[Depends(require_bot)])
+@limiter.limit("10/minute")
+async def bot_token_upload(request: Request):
+    """Recebe storage_state do bot; nenhum email de destino e aceito no payload."""
+    # Leitura limitada inclusive para requests chunked. Erros nunca ecoam cookies.
+    payload = bytearray()
+    async for chunk in request.stream():
+        payload.extend(chunk)
+        if len(payload) > 1024 * 1024:
+            raise HTTPException(status_code=413, detail="Sessao excede 1 MiB")
+    try:
+        body = json.loads(payload)
+    except (ValueError, UnicodeError):
+        raise HTTPException(status_code=400, detail="JSON invalido") from None
+    if not isinstance(body, dict) or set(body) != {"link_token", "storage_state", "google_account"}:
+        raise HTTPException(status_code=400, detail="Informe link_token, storage_state e google_account")
+    token, state, account = body["link_token"], body["storage_state"], body["google_account"]
+    if not isinstance(token, str) or not token.startswith("link_") or len(token) != 48:
+        raise HTTPException(status_code=400, detail="Codigo de vinculo invalido")
+    if not isinstance(account, str) or not account.strip() or len(account) > 320:
+        raise HTTPException(status_code=400, detail="Conta Google invalida")
+    cookies = state.get("cookies") if isinstance(state, dict) else None
+    if not isinstance(cookies, list) or not cookies or not all(
+        isinstance(c, dict) and all(isinstance(c.get(k), str) for k in ("name", "value", "domain", "path"))
+        for c in cookies
+    ):
+        raise HTTPException(status_code=400, detail="storage_state invalido")
+    if not any(
+        (c["domain"].lstrip(".").lower() == "google.com" or c["domain"].lower().endswith(".google.com"))
+        and c["name"] in {"SID", "__Secure-1PSID", "__Secure-3PSID"} and c["value"]
+        for c in cookies
+    ) or not isinstance(state.get("origins", []), list):
+        raise HTTPException(status_code=400, detail="storage_state sem cookies de sessao Google")
+    email = db.save_bot_storage_state(token, state, account.strip().lower())
+    if not email:
+        raise HTTPException(status_code=403, detail="Vinculo invalido, expirado, usado ou conta divergente/inativa")
+    return {"status": "ok", "email": email}
+
 
 class TokenUploadRequest(BaseModel):
     email: str
